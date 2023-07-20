@@ -1,0 +1,359 @@
+#+title: Emacs Init
+#+property: header-args :tangle ~/.emacs.d/init.el 
+
+* Important Stuff and Prerequisites
+** Package Sources
+ #+begin_src elisp
+ (require 'package)
+ (add-to-list 'package-archives '("gnu"   . "https://elpa.gnu.org/packages/"))
+ (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+ (package-initialize)
+ #+end_src
+
+** Setting Up Custom File 
+ #+begin_src elisp
+ (setq custom-file "~/.emacs.d/custom-file.el")
+ (load-file custom-file)
+ #+end_src
+
+** Installing Use Package 
+ #+begin_src elisp
+ (when (not (package-installed-p 'use-package))
+   (package-refresh-contents)
+   (package-install 'use-package))
+ #+end_src
+
+** Undo-Tree
+ #+begin_src elisp
+(use-package undo-tree
+:ensure t
+:config (global-undo-tree-mode))
+ #+end_src
+
+** Setting Up Evil Mode 
+ #+begin_src elisp
+ (use-package evil
+ :ensure t
+ :config
+ (require 'evil)
+ (evil-mode 1)
+ (custom-set-variables '(evil-undo-system 'undo-tree))
+ (evil-define-key 'normal org-mode-map (kbd "<tab>") #'org-cycle))
+ #+end_src
+
+** General Keybinding
+#+begin_src elisp
+(use-package general 
+:ensure t
+:config
+  (general-evil-setup)
+  
+  ;; set up 'SPC' as the global leader key
+  (general-create-definer dt/leader-keys
+    :states '(normal insert visual emacs)
+    :keymaps 'override
+    :prefix "SPC" ;; set leader
+    :global-prefix "M-SPC") ;; access leader in insert mode
+(dt/leader-keys
+    "SPC" '(counsel-M-x :wk "Counsel M-x")
+    "." '(find-file :wk "Find file")
+    "f c" '((lambda () (interactive) (find-file "~/personalconfigs/emacs/init.org")) :wk "Edit emacs config")
+    "f r" '(counsel-recentf :wk "Find recent files")
+    "TAB TAB" '(comment-line :wk "Comment lines"))
+ (dt/leader-keys
+    "b" '(:ignore t :wk "buffer")
+    "b b" '(switch-to-buffer :wk "Switch buffer")
+    "b i" '(ibuffer :wk "Ibuffer")
+    "b k" '(kill-this-buffer :wk "Kill this buffer")
+    "b n" '(next-buffer :wk "Next buffer")
+    "b p" '(previous-buffer :wk "Previous buffer")
+    "b r" '(revert-buffer :wk "Reload buffer"))
+(dt/leader-keys
+    "m" '(:ignore t :wk "Org")
+    "m a" '(org-agenda :wk "Org agenda")
+    "m e" '(org-export-dispatch :wk "Org export dispatch")
+    "m i" '(org-toggle-item :wk "Org toggle item")
+    "m t" '(org-todo :wk "Org todo")
+    "m B" '(org-babel-tangle :wk "Org babel tangle")
+    "m T" '(org-todo-list :wk "Org todo list"))
+
+ (dt/leader-keys
+    "p" '(projectile-command-map :wk "Projectile"))
+ (dt/leader-keys
+    "t" '(:ignore t :wk "Toggle")
+    "t e" '(eshell-toggle :wk "Toggle eshell")
+    "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
+    "t t" '(visual-line-mode :wk "Toggle truncated lines")
+    "t v" '(vterm-toggle :wk "Toggle vterm"))
+
+  (dt/leader-keys
+    "w" '(:ignore t :wk "Windows")
+    ;; Window splits
+    "w c" '(evil-window-delete :wk "Close window")
+    "w n" '(evil-window-new :wk "New window")
+    "w s" '(evil-window-split :wk "Horizontal split window")
+    "w v" '(evil-window-vsplit :wk "Vertical split window")
+    ;; Window motions
+    "w h" '(evil-window-left :wk "Window left")
+    "w j" '(evil-window-down :wk "Window down")
+    "w k" '(evil-window-up :wk "Window up")
+    "w l" '(evil-window-right :wk "Window right")
+    "w w" '(evil-window-next :wk "Goto next window")
+    ;; Move Windows
+    "w H" '(buf-move-left :wk "Buffer move left")
+    "w J" '(buf-move-down :wk "Buffer move down")
+    "w K" '(buf-move-up :wk "Buffer move up")
+    "w L" '(buf-move-right :wk "Buffer move right"))
+)
+#+end_src
+* Utilities and Convinience
+** Store Recent File
+#+begin_src elisp
+(require 'recentf)
+(recentf-mode 1)
+(setq recentf-max-menu-items 25)
+(setq recentf-max-saved-items 25)
+(global-set-key "\C-x\ \C-r" 'recentf-open-files)
+#+end_src
+** Projectile
+#+begin_src elisp
+(use-package projectile
+:ensure t
+:config (projectile-mode +1)
+        (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
+#+end_src
+** Ivy And Counsel
+#+begin_src elisp
+(use-package ivy
+  :ensure t
+  :bind
+  ;; ivy-resume resumes the last Ivy-based completion.
+  (("C-c C-r" . ivy-resume)
+   ("C-x B" . ivy-switch-buffer-other-window))
+   :demand
+   :config
+(ivy-mode)
+(setq ivy-use-virtual-buffers t)
+(setq enable-recursive-minibuffers t)
+;; enable this if you want `swiper' to use it
+;; (setq search-default-mode #'char-fold-to-regexp)
+(global-set-key "\C-s" 'swiper)
+(global-set-key (kbd "C-c C-r") 'ivy-resume)
+(global-set-key (kbd "<f6>") 'ivy-resume)
+(global-set-key (kbd "M-x") 'counsel-M-x)
+(global-set-key (kbd "C-x C-f") 'counsel-find-file)
+(global-set-key (kbd "<f1> f") 'counsel-describe-function)
+(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+(global-set-key (kbd "<f1> o") 'counsel-describe-symbol)
+(global-set-key (kbd "<f1> l") 'counsel-find-library)
+(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+(global-set-key (kbd "C-c g") 'counsel-git)
+(global-set-key (kbd "C-c j") 'counsel-git-grep)
+(global-set-key (kbd "C-c k") 'counsel-ag)
+(global-set-key (kbd "C-x l") 'counsel-locate)
+(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
+(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+  )
+
+(use-package counsel
+  :ensure t
+  :after ivy
+  :demand
+  :config (counsel-mode))
+
+(use-package ivy-rich
+  :ensure t
+  :after ivy
+  :config
+  (ivy-rich-mode 1))
+#+end_src
+** Tree Macs
+#+begin_src elisp
+(use-package treemacs
+  :ensure t
+  :defer t
+  :init
+  (with-eval-after-load 'winum
+    (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
+  :config
+  (progn
+    (setq treemacs-collapse-dirs                   (if treemacs-python-executable 3 0)
+          treemacs-deferred-git-apply-delay        0.5
+          treemacs-directory-name-transformer      #'identity
+          treemacs-display-in-side-window          t
+          treemacs-eldoc-display                   'simple
+          treemacs-file-event-delay                2000
+          treemacs-file-extension-regex            treemacs-last-period-regex-value
+          treemacs-file-follow-delay               0.2
+          treemacs-file-name-transformer           #'identity
+          treemacs-follow-after-init               t
+          treemacs-expand-after-init               t
+          treemacs-find-workspace-method           'find-for-file-or-pick-first
+          treemacs-git-command-pipe                ""
+          treemacs-goto-tag-strategy               'refetch-index
+          treemacs-header-scroll-indicators        '(nil . "^^^^^^")
+          treemacs-hide-dot-git-directory          t
+          treemacs-indentation                     2
+          treemacs-indentation-string              " "
+          treemacs-is-never-other-window           nil
+          treemacs-max-git-entries                 5000
+          treemacs-missing-project-action          'ask
+          treemacs-move-forward-on-expand          nil
+          treemacs-no-png-images                   nil
+          treemacs-no-delete-other-windows         t
+          treemacs-project-follow-cleanup          nil
+          treemacs-persist-file                    (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+          treemacs-position                        'left
+          treemacs-read-string-input               'from-child-frame
+          treemacs-recenter-distance               0.1
+          treemacs-recenter-after-file-follow      nil
+          treemacs-recenter-after-tag-follow       nil
+          treemacs-recenter-after-project-jump     'always
+          treemacs-recenter-after-project-expand   'on-distance
+          treemacs-litter-directories              '("/node_modules" "/.venv" "/.cask")
+          treemacs-project-follow-into-home        nil
+          treemacs-show-cursor                     nil
+          treemacs-show-hidden-files               t
+          treemacs-silent-filewatch                nil
+          treemacs-silent-refresh                  nil
+          treemacs-sorting                         'alphabetic-asc
+          treemacs-select-when-already-in-treemacs 'move-back
+          treemacs-space-between-root-nodes        t
+          treemacs-tag-follow-cleanup              t
+          treemacs-tag-follow-delay                1.5
+          treemacs-text-scale                      nil
+          treemacs-user-mode-line-format           nil
+          treemacs-user-header-line-format         nil
+          treemacs-wide-toggle-width               70
+          treemacs-width                           35
+          treemacs-width-increment                 1
+          treemacs-width-is-initially-locked       t
+          treemacs-workspace-switch-cleanup        nil)
+
+    ;; The default width and height of the icons is 22 pixels. If you are
+    ;; using a Hi-DPI display, uncomment this to double the icon size.
+    ;;(treemacs-resize-icons 44)
+
+    (treemacs-follow-mode t)
+    (treemacs-filewatch-mode t)
+    (treemacs-fringe-indicator-mode 'always)
+    (when treemacs-python-executable
+      (treemacs-git-commit-diff-mode t))
+
+    (pcase (cons (not (null (executable-find "git")))
+                 (not (null treemacs-python-executable)))
+      (`(t . t)
+       (treemacs-git-mode 'deferred))
+      (`(t . _)
+       (treemacs-git-mode 'simple)))
+
+    (treemacs-hide-gitignored-files-mode nil))
+  :bind
+  (:map global-map
+        ("M-0"       . treemacs-select-window)
+        ("C-x t 1"   . treemacs-delete-other-windows)
+        ("C-x t t"   . treemacs)
+        ("C-x t d"   . treemacs-select-directory)
+        ("C-x t B"   . treemacs-bookmark)
+        ("C-x t C-t" . treemacs-find-file)
+        ("C-x t M-t" . treemacs-find-tag)))
+
+(use-package treemacs-evil
+  :after (treemacs evil)
+  :ensure t)
+
+(use-package treemacs-projectile
+  :after (treemacs projectile)
+  :ensure t
+  :config
+  (treemacs-projectile))
+
+(use-package treemacs-icons-dired
+  :hook (dired-mode . treemacs-icons-dired-enable-once)
+  :ensure t)
+
+#+end_src
+** Dired A
+#+begin_src elisp
+(put 'dired-find-alternate-file 'disabled nil)
+#+end_src
+* Appearance
+** Remove Unwanted UI Elements
+ #+begin_src elisp
+ (menu-bar-mode -1)
+ (scroll-bar-mode -1)
+ (tool-bar-mode -1)
+ #+end_src
+
+** Themes and Appearances 
+ #+begin_src elisp
+ (use-package spacemacs-theme
+ :ensure t)
+ (use-package ef-themes
+ :ensure t
+ :config (load-theme 'ef-bio))
+ (use-package plan9-theme 
+ :ensure t)
+ (use-package eziam-themes 
+ :ensure t)
+ #+end_src
+
+** All The Icons
+#+begin_src elisp
+(use-package all-the-icons
+:ensure t)
+#+end_src
+
+** Nerd Fonts
+#+begin_src elisp
+(use-package nerd-icons
+  :ensure t
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+  )
+#+end_src
+** Dashboard
+#+begin_src elisp
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook)
+  (setq dashboard-center-content t)
+  (setq dashboard-startup-banner "~/personalconfigs/emacs/banner.txt")
+  (setq dashboard-items '((recents  . 10)
+                        (bookmarks . 5)
+                        (projects . 5)
+                        (agenda . 5)
+                        (registers . 0))))
+#+end_src
+
+** Doom Modeline
+#+begin_src elisp
+;;(use-package doom-modeline
+  ;;:ensure t
+  ;;:init (doom-modeline-mode 1))
+#+end_src
+** Telephoneline
+#+begin_src elisp
+(use-package telephone-line
+:ensure t
+:config
+(telephone-line-mode 1))
+#+end_src
+* Org Mode
+** Org Bullets
+#+begin_src elisp
+ (use-package org-bullets
+ :ensure t
+ :config
+ (require 'org-bullets)
+ (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+#+end_src
+** Org Ellipes
+#+begin_src elisp
+(setq org-ellipsis " ▼ ")
+#+end_src
